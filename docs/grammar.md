@@ -1,3 +1,8 @@
+### Warning
+GitHub does not correctly render LaTeX embedded into Markdown files.
+Expect issues with rendering if you are viewing this on GitHub.
+For a better viewing experience, [download this file](https://raw.githubusercontent.com/BobGoldham/bdbc/master/docs/grammar.md).
+
 $$
 \begin{align}
 [S] &\to [exit]
