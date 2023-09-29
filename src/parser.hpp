@@ -34,7 +34,7 @@ public:
 
     std::optional<node::IntLit> parse_int_lit()
     {
-        if (peak().has_value() && peak().value().type == TokenType::int_lit)
+        if (peek().has_value() && peek().value().type == TokenType::int_lit)
             return node::IntLit{.m_value = consume()};
         return {};
     }
@@ -60,7 +60,7 @@ public:
             exit(EXIT_FAILURE);
         }
 
-        if (!peak().has_value() || peak().value().type != TokenType::line_end)
+        if (!peek().has_value() || peek().value().type != TokenType::line_end)
         {
             std::cerr << "Invalid syntax! Try ending your lines." << std::endl;
             exit(EXIT_FAILURE);
@@ -74,9 +74,9 @@ public:
     {
         std::optional<node::S> nodeS;
 
-        while (peak().has_value())
+        while (peek().has_value())
         {
-            if (peak().value().type == TokenType::exit)
+            if (peek().value().type == TokenType::exit)
             {
                 consume();
                 if (auto node_exit = parse_exit())
@@ -99,7 +99,7 @@ private:
     const std::vector<Token> m_tokens;
     size_t m_index = 0;
 
-    [[nodiscard]] inline std::optional<Token> peak(int offset = 0) const
+    [[nodiscard]] inline std::optional<Token> peek(int offset = 0) const
     {
         if (m_index + offset >= m_tokens.size())
             return {};
