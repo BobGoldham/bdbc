@@ -1,27 +1,42 @@
 #pragma once
 
 #include <optional>
+#include <variant>
 #include <vector>
 
 #include "tokenization.hpp"
 
 namespace node
 {
-    struct IntLit
+    struct ExprIntLit
     {
-        Token m_value;
+        Token value;
+    };
+    struct ExprIdent
+    {
+        Token ident;
     };
     struct Expr
     {
-        std::optional<IntLit> m_int_lit;
+        std::variant<ExprIntLit, ExprIdent> var;
     };
     struct Exit
     {
-        Expr m_expr;
+        Expr expr;
+    };
+    struct VarVarDef
+    {
+        Token ident;
+        Expr expr;
+    };
+    struct Stmt
+    {
+        std::variant<Exit, VarVarDef> var;
     };
     struct S
     {
-        std::optional<Exit> m_exit;
+        std::vector<Stmt> stmts;
+        // std::optional<Exit> exit;
     };
 }
 
@@ -32,17 +47,14 @@ public:
     {
     }
 
-    std::optional<node::IntLit> parse_int_lit()
-    {
-        if (peek().has_value() && peek().value().type == TokenType::int_lit)
-            return node::IntLit{.m_value = consume()};
-        return {};
-    }
-
     std::optional<node::Expr> parse_expr()
     {
-        if (auto node_int_lit = parse_int_lit())
-            return node::Expr{.m_int_lit = node_int_lit.value()};
+        if (peek().has_value() && peek().value().type == TokenType::int_lit)
+            return node::Expr{.var = node::ExprIntLit{.value = consume()}};
+
+        if (peek().has_value() && peek().value().type == TokenType::ident)
+            return node::Expr{.var = node::ExprIdent{.ident = consume()}};
+
         return {};
     }
 
@@ -50,15 +62,27 @@ public:
     {
         std::optional<node::Exit> nodeExit;
 
+        consume();
+
+        if (!peek().has_value() || !(peek().value().type == TokenType::space))
+        {
+            std::cerr << "Invalid exit syntax" << std::endl;
+            exit(EXIT_FAILURE);
+        }
+        consume();
+
         if (auto node_expr = parse_expr())
         {
-            nodeExit = node::Exit{.m_expr = node_expr.value()};
+            nodeExit = node::Exit{.expr = node_expr.value()};
         }
         else
         {
             std::cerr << "Invalid exit code" << std::endl;
             exit(EXIT_FAILURE);
         }
+
+        while (peek().has_value() && peek().value().type == TokenType::space)
+            consume();
 
         if (!peek().has_value() || peek().value().type != TokenType::line_end)
         {
@@ -70,23 +94,71 @@ public:
         return nodeExit;
     }
 
+    std::optional<node::VarVarDef> parse_var_var()
+    {
+        if (!peek(1).has_value() || peek(1).value().type != TokenType::space)
+            return {};
+        if (!peek(2).has_value() || peek(2).value().type != TokenType::ident)
+            return {};
+        size_t space_it = 3;
+        while (peek(space_it).has_value() && peek(space_it).value().type == TokenType::space)
+            space_it++;
+        if (!peek(space_it).has_value() || peek(space_it).value().type != TokenType::eq)
+            return {};
+        while (peek(space_it + 1).has_value() && peek(space_it + 1).value().type == TokenType::space)
+            space_it++;
+
+        consume();
+        consume();
+        node::VarVarDef vvd{.ident = consume()};
+
+        for (int i = 2; i < space_it; i++)
+            consume();
+
+        if (auto expr = parse_expr())
+            vvd.expr = expr.value();
+        else
+        {
+            std::cerr << "Invalid expression!";
+            exit(EXIT_FAILURE);
+        }
+
+        if (peek().has_value() && peek().value().type == TokenType::line_end)
+            consume();
+        else
+        {
+            std::cerr << "Try ending your lines, duh..";
+            exit(EXIT_FAILURE);
+        }
+
+        return vvd;
+    }
+
+    std::optional<node::Stmt> parse_stmt()
+    {
+        if (peek().has_value() && peek().value().type == TokenType::exit)
+            return node::Stmt{.var = parse_exit().value()};
+        if (peek().has_value() && peek().value().type == TokenType::varVar)
+            return node::Stmt{.var = parse_var_var().value()};
+
+        return {};
+    }
+
     std::optional<node::S> parse()
     {
-        std::optional<node::S> nodeS;
+        node::S nodeS;
 
         while (peek().has_value())
         {
-            if (peek().value().type == TokenType::exit)
-            {
+            while (peek().value().type == TokenType::space)
                 consume();
-                if (auto node_exit = parse_exit())
-                {
-                    nodeS = node::S{.m_exit = node_exit.value()};
-                }
+            if (auto stmt = parse_stmt())
+            {
+                nodeS.stmts.push_back(stmt.value());
             }
             else
             {
-                std::cerr << "Invalid Syntax" << std::endl;
+                std::cerr << "Invalid statement!" << std::endl;
                 exit(EXIT_FAILURE);
             }
         }

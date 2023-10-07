@@ -9,7 +9,11 @@ enum class TokenType
 {
     exit,
     int_lit,
-    line_end
+    line_end,
+    space,
+    ident,
+    varVar,
+    eq
 };
 
 struct Token
@@ -36,9 +40,14 @@ public:
             if (std::isalpha(peek().value()))
             {
                 buf.push_back(consume());
-                while (peek().has_value() && std::isalnum(peek().value()))
+                while (peek().has_value() && (std::isalnum(peek().value()) || peek().value() == '_'))
                 {
                     buf.push_back(consume());
+                }
+                if (buf == "var" || buf == "const")
+                {
+                    buf.push_back(consume());
+                    continue;
                 }
 
                 if (buf == "exit")
@@ -47,12 +56,18 @@ public:
                     buf.clear();
                     continue;
                 }
+
+                if (buf == "var var")
+                {
+                    tokens.push_back({.type = TokenType::varVar});
+                    buf.clear();
+                    continue;
+                }
                 else
                 {
-                    std::cerr << "Invalid token encountered!\n"
-                              << peek().value() << "\n"
-                              << buf << std::endl;
-                    exit(EXIT_FAILURE);
+                    tokens.push_back({.type = TokenType::ident, .value = buf});
+                    buf.clear();
+                    continue;
                 }
                 continue;
             }
@@ -75,9 +90,16 @@ public:
                 continue;
             }
 
-            if (std::isspace(peek().value()))
+            if (peek().value() == '=')
             {
+                tokens.push_back({.type = TokenType::eq});
                 consume();
+                continue;
+            }
+
+            if (std::isspace(peek().value()) || peek().value() == '(' || peek().value() == ')')
+            {
+                tokens.push_back({.type = TokenType::space, .value = std::string{consume()}});
                 continue;
             }
 

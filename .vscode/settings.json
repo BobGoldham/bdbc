@@ -75,5 +75,9 @@
     "shared_mutex": "cpp",
     "variant": "cpp"
   },
-  "C_Cpp.intelliSenseEngineFallback": "enabled"
+  "C_Cpp.intelliSenseEngineFallback": "enabled",
+  "cmake.debugConfig": {
+    "args": ["${workspaceRoot}/src/test.dream"]
+  },
+  "cmake.configureOnOpen": true
 }

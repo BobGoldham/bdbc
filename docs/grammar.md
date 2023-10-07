@@ -5,17 +5,32 @@ For a better viewing experience, [download this file](https://raw.githubusercont
 
 $$
 \begin{align}
-[S] &\to [exit]
+[S] &\to \begin{cases}
+    \epsilon\\
+    [exit]\\
+    [var]S
+\end{cases}
+\\
+[var] &\to \text{var var }[varname] \text{=} [expr][endline]
 \\
 [exit] &\to \text{exit } [expr][endline]
 \\
-[expr] &\to [int\_lit]
+[expr] &\to \begin{cases}
+    [int\_lit]\\
+    [ident]
+\end{cases}
 \\
 [int\_lit] &\to 1|2|3|...
 \\
-[endline] &\to \text{?}|[exclamate]
+[endline] &\to \begin{cases}
+    \text{?}\\
+    [exclamate]
+\end{cases}
 \\
-[exclamate] &\to [exclamate]\text{!}|\text{!}
+[exclamate] &\to \begin{cases}
+    [exclamate]\text{!}\\
+    \text{!}
+\end{cases}
 \end{align}
 $$
 
